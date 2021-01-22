@@ -1,0 +1,32 @@
+name: Helm chart - build development version
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    branches: [master]
+    types: 
+      - completed
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+
+    - name: Checkout
+      uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+
+    - name: Get Version
+      id: env
+      run: |
+        echo "VERSION=$(grep 'OCCU_VERSION =' buildroot-external/package/occu/occu.mk | cut -d' ' -f3 | cut -d'-' -f1).$(date +%Y%m%d)" >> $GITHUB_ENV
+
+    - name: Publish testing Helm chart after sucesfull 
+      if: github.event_name != 'workflow_run'
+      uses: stefanprodan/helm-gh-pages@master
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        charts_dir: helm
+        chart_version: 0.1
+        app_version: ${{ env.VERSION }}
